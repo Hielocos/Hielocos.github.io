@@ -15,20 +15,21 @@ class Hielocos extends Phaser.Scene
 {
     constructor()
     {
-        super();
+        super('Hielocos');
     }
 
     preload()
     {
         this.load.setBaseURL('https://www.antonio.com.mx');
-        this.load.image('fondo_oceano','imagenes/fondo_oceano.jpg')
+        this.load.image('fondo_oceano','imagenes/fondo_oceano.jpg');
         this.load.spritesheet('pinguino','imagenes/pinguino.png',{frameWidth:30, frameHeight: 43});
         this.load.image('hieloco', 'imagenes/hieloco.png');
     }
 
     create()
     {
-
+        this.scale.displaySize.setAspectRatio(ANCHO/ALTO);
+        this.scale.refresh();
         this.fondo = this.add.tileSprite(0,0,0,0,'fondo_oceano')
         .setOrigin(0)
         .setScrollFactor(0,1);
@@ -45,6 +46,7 @@ class Hielocos extends Phaser.Scene
         temporizadorHielocos=0;
         this.textoPuntaje = this.add.text((ANCHO/2)-50,10,'Puntos\n0',{fontFamily:'Arial',fontSize:'24px',fill:'#ffffff', align:'center'});
         grupoHielos = this.physics.add.group();
+        //Chismoso del clic/tap:
         this.input.on('pointerdown', function(pointer){
             let puntoX = pointer.x;
             //let puntoY = pointer.y;
@@ -53,10 +55,8 @@ class Hielocos extends Phaser.Scene
             //console.log('X: '+puntoX+',Y: '+puntoY+'-> CARRIL: '+carril);
             spritePinguino.x = arrayCarril[carril];
         });
-        this.physics.add.collider(spritePinguino,grupoHielos, function(pinguinito, hielito)
-        {
-            if(pinguinito.body.touching && hielito.body.touching)
-            {
+        this.physics.add.collider(spritePinguino,grupoHielos, function(pinguinito, hielito){
+            if(pinguinito.body.touching && hielito.body.touching){
                 //chocas
                 hielito.removeInteractive();
                 hielito.removedFromScene();
@@ -70,20 +70,26 @@ class Hielocos extends Phaser.Scene
                     spritePinguino.destroy();
                     estoyVivo = false;
                     console.log('Moriste');
+                    terminar();
                 }
             }
         });
+        function terminar()
+        {
+            juego.scene.remove('Hielocos');
+            juego.scene.start('GameOver');
+        }
     }
 
     update(tiempo,delta)
     {
         this.fondo.tilePositionY -= velocidadFondo;
         temporizadorHielocos += delta;
-        while(temporizadorHielocos> deltaHieloco){
+        while((temporizadorHielocos> deltaHieloco) && estoyVivo){
             //console.log(temporizadorHielocos);
             temporizadorHielocos -= deltaHieloco;
             let carril = Math.floor(Math.random()*3);
-            let hielo = new Hielo (this,arrayCarril[carril],0);
+            let hielo = new Hielo(this,arrayCarril[carril],0);
             grupoHielos.add(hielo);
             if(estoyVivo){
                 puntos++;
@@ -91,6 +97,7 @@ class Hielocos extends Phaser.Scene
             this.textoPuntaje.setText('Puntos\n'+puntos);
         }
     }
+
 }
 
 const configuracion =
@@ -103,9 +110,13 @@ const configuracion =
     physics:{
         default:'arcade',
         arcade:{
-            debug:true
+            debug:false
         }
     },
-    scene: [Hielocos]
+    scale:{
+        mode: Phaser.Scale.FIT, //Celular
+    },
+    scene: [Hielocos, GameOver]
 };
+
 const juego = new Phaser.Game(configuracion);
